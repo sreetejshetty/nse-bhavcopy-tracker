@@ -1,0 +1,34 @@
+name: Fetch NSE Bhavcopy
+
+on:
+  schedule:
+    # 13:30 UTC = 7:00 PM IST, Monday-Friday (well after NSE's ~6 PM IST publish time)
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch bhavcopy
+        run: python fetch_bhavcopy.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "Update bhavcopy data $(date +'%Y-%m-%d')"
+          git push
